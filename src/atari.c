@@ -177,6 +177,9 @@ int Atari800_auto_frameskip = FALSE;
 static double benchmark_start_time;
 #endif
 
+static double elapsed_ss_time;
+int Atari800_screenshot_rate = 0;
+
 #ifdef CTRL_C_HANDLER
 volatile sig_atomic_t sigint_flag = FALSE;
 
@@ -634,6 +637,15 @@ int Atari800_Initialise(int *argc, char *argv[])
 						Atari800_refresh_rate = 1;
 					}
 				}
+			}
+			else if (strcmp(argv[i], "-ssrate") == 0) {
+				if (i_a) {
+					Atari800_screenshot_rate = Util_sscandec(argv[++i]);
+					if (Atari800_screenshot_rate < 0) {
+						Log_print("Invalid screenshot rate, using 0");
+						Atari800_screenshot_rate = 0;
+					}
+				}
 				else
 					a_m = TRUE;
 			}
@@ -677,6 +689,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 					Log_print("\t-basic           Turn on Atari BASIC ROM");
 					Log_print("\t-pal             Enable PAL TV mode");
 					Log_print("\t-ntsc            Enable NTSC TV mode");
+					Log_print("\t-ssrate <n>      Take screenshot every <n> frames (0)");
 					Log_print("\t-run <file>      Run Atari program (COM, EXE, XEX, BAS, LST)");
 #ifndef BASIC
 					Log_print("\t-state <file>    Load saved-state file");
@@ -1329,6 +1342,18 @@ void Atari800_Frame(void)
 	Sound_Update();
 #endif
 	Atari800_nframes++;
+
+
+if (Atari800_screenshot_rate > 0) {
+    if (elapsed_ss_time == Atari800_screenshot_rate) {
+      Screen_SaveNextScreenshot(FALSE);
+      elapsed_ss_time = 0;
+    }
+  elapsed_ss_time++;
+  }
+
+
+
 #ifdef BENCHMARK
 	if (Atari800_nframes >= BENCHMARK) {
 		double benchmark_time = Util_time() - benchmark_start_time;
